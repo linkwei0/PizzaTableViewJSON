@@ -24,7 +24,6 @@ class MenuViewController: BaseViewController {
     private let categoryStackView = UIStackView()
     private let containerView = UIView()
     private let tableView = UITableView()
-    private let tabBar = UITabBar()
     
     private let presenter: MenuPresenterProtocol
         
@@ -65,7 +64,6 @@ class MenuViewController: BaseViewController {
         setupBannerView()
         setupContainerView()
         setupTableView()
-        setupTabBar()
     }
     
     private func setupCityView() {
@@ -162,15 +160,6 @@ class MenuViewController: BaseViewController {
             make.leading.trailing.bottom.equalToSuperview()
         }
     }
-    
-    private func setupTabBar() {
-        view.addSubview(tabBar)
-        tabBar.backgroundColor = .red
-        tabBar.snp.makeConstraints { make in
-            make.bottom.equalToSuperview()
-            make.height.equalTo(50)
-        }
-    }
 }
 
 // MARK: - MenuViewProtocol
@@ -206,13 +195,10 @@ extension MenuViewController: UITableViewDataSource {
 // MARK: - UITableViewDelegate/UIScrollViewDelegate
 
 extension MenuViewController: UITableViewDelegate, UIScrollViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        print("Tapped on -", presenter.arrayOfFood[indexPath.row].name)
-    }
-    
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard let topViewHeightConstraint = topViewHeightConstraint else { return }
         let currentOffset = scrollView.contentOffset
+
         if let startOffset = previousOffset {
             let delta = abs((startOffset.y - currentOffset.y))
           

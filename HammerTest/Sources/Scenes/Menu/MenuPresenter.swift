@@ -72,10 +72,6 @@ class MenuPresenter {
         }
     }
     
-    private func highlightSelectedCategoryView(categories: [CategoryView]) {
-        
-    }
-    
     // MARK: - Public methods
     
     func configureCell(indexPath: IndexPath) -> Food {
