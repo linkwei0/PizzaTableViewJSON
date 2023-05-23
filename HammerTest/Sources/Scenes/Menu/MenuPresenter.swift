@@ -11,8 +11,9 @@ protocol MenuPresenterProtocol: AnyObject {
     var arrayOfFood: [Food] { get }
     
     func viewDidLoaded()
-    func didLoad(arrayOfFood: [Food])
+    func dataDidLoad(arrayOfFood: [Food])
     func configureCell(indexPath: IndexPath) -> Food
+    func currentCategoryByOffsetY(_ indexPath: IndexPath?)
 }
 
 class MenuPresenter {
@@ -27,7 +28,6 @@ class MenuPresenter {
     private let router: MenuRouterProtocol
     private let interactor: MenuInteractorProtocol
     
-    
     // MARK: - Init
     
     init(router: MenuRouterProtocol, interactor: MenuInteractorProtocol) {
@@ -37,40 +37,37 @@ class MenuPresenter {
     
     // MARK: - Private methods
     
-    private func catchAllCategories() {
-        let allDuplicatesCategories = arrayOfFood.map { $0.category }
-        let uniqueCategories = Set(allDuplicatesCategories).sorted { $0 > $1 }
+    private func handleCategories() {
+        let categories = Set(arrayOfFood.map { $0.category }).sorted { $0 > $1 }
         
-        uniqueCategories.forEach { categoryName in
+        for (index, categoryName) in categories.enumerated() {
+            let category: Category = index == 0 ? Category(text: categoryName, isSelected: true) : Category(text: categoryName, isSelected: false)
             let categoryView = CategoryView()
-            let category: Category
-            
-            if uniqueCategories.first == categoryName {
-                category = Category(text: categoryName, isSelected: true)
-            } else {
-                category = Category(text: categoryName, isSelected: false)
-            }
             
             categoryView.onDidTap = { [weak self] selectedCategory in
-                self?.categoryViews.forEach { categoryView in
-                    categoryView.category?.isSelected = false
-                    categoryView.configure(with: categoryView.category!)
+                self?.categoryViews.forEach { subView in
+                    if subView.category?.text == selectedCategory.text {
+                        subView.category?.isSelected = true
+                        subView.configure(with: subView.category!)
+                    } else {
+                        subView.category?.isSelected = false
+                        subView.configure(with: subView.category!)
+                    }
                 }
                 
-                if let index = allDuplicatesCategories.firstIndex(where: { name in
-                    name == selectedCategory.text
+                if let index = self?.arrayOfFood.firstIndex(where: { food in
+                    food.category == selectedCategory.text
                 }) {
                     let indexPath = IndexPath(row: index, section: 0)
-                    let selectedCategory = self?.categoryViews.first { $0.category?.text == selectedCategory.text }
-                    selectedCategory?.category?.isSelected = true
-                    categoryView.configure(with: (selectedCategory?.category)!)
-                    self?.view?.showCategory(indexPath)
+                    self?.view?.scrollToCategory(with: indexPath)
                 }
             }
+            
             categoryView.configure(with: category)
             categoryViews.append(categoryView)
         }
     }
+    
     
     // MARK: - Public methods
     
@@ -86,9 +83,22 @@ extension MenuPresenter: MenuPresenterProtocol {
         interactor.loadData()
     }
     
-    func didLoad(arrayOfFood: [Food]) {
+    func dataDidLoad(arrayOfFood: [Food]) {
         self.arrayOfFood = arrayOfFood.sorted { $0.category > $1.category }
-        catchAllCategories()
-        view?.updateTable()
+        handleCategories()
+        view?.updateTableView()
+    }
+    
+    func currentCategoryByOffsetY(_ indexPath: IndexPath?) {
+        guard let index = indexPath else { return }
+        let food = arrayOfFood[index.row]
+        
+        categoryViews.forEach { categoryView in
+            let isSelected = categoryView.category?.text == food.category ? true : false
+            if var category = categoryView.category {
+                category.isSelected = isSelected
+                categoryView.configure(with: category)
+            }
+        }
     }
 }

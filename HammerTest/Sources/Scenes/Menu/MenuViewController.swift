@@ -6,8 +6,8 @@
 import UIKit
 
 protocol MenuViewProtocol: AnyObject {
-    func updateTable()
-    func showCategory(_ indexPath: IndexPath)
+    func updateTableView()
+    func scrollToCategory(with indexPath: IndexPath)
 }
 
 class MenuViewController: BaseViewController {
@@ -15,7 +15,7 @@ class MenuViewController: BaseViewController {
     
     private var previousOffset: CGPoint?
     private var topViewHeightConstraint: NSLayoutConstraint?
-    private var viewHeight: CGFloat = 145
+    private var viewHeight: CGFloat = 145.0
     
     private let cityView = TitleView()
     private let bannerScrollView = UIScrollView()
@@ -26,7 +26,7 @@ class MenuViewController: BaseViewController {
     private let tableView = UITableView()
     
     private let presenter: MenuPresenterProtocol
-        
+    
     // MARK: - Init
     
     init(presenter: MenuPresenterProtocol) {
@@ -156,8 +156,9 @@ class MenuViewController: BaseViewController {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.snp.makeConstraints { make in
-            make.top.equalToSuperview().inset(16)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.top.equalTo(containerView.safeAreaLayoutGuide.snp.top).inset(1)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview()
         }
     }
 }
@@ -165,11 +166,11 @@ class MenuViewController: BaseViewController {
 // MARK: - MenuViewProtocol
 
 extension MenuViewController: MenuViewProtocol {
-    func showCategory(_ indexPath: IndexPath) {
+    func scrollToCategory(with indexPath: IndexPath) {
         tableView.scrollToRow(at: indexPath, at: .top, animated: true)
     }
     
-    func updateTable() {
+    func updateTableView() {
         DispatchQueue.main.async {
             self.tableView.reloadData()
             self.setupCategoryView()
@@ -198,10 +199,24 @@ extension MenuViewController: UITableViewDelegate, UIScrollViewDelegate {
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard let topViewHeightConstraint = topViewHeightConstraint else { return }
         let currentOffset = scrollView.contentOffset
-
+        let currentOffsetY = scrollView.contentOffset.y
+        
+        var counterOffsetY: CGFloat = 0.35
+        let previosOffsetY: CGFloat = 0.0
+        
+        if currentOffsetY > counterOffsetY {
+            let indexPath = tableView.indexPathForRow(at: CGPoint(x: 0, y: currentOffsetY))
+            presenter.currentCategoryByOffsetY(indexPath)
+            counterOffsetY += 0.35
+        } else if currentOffsetY < previosOffsetY {
+            let indexPath = tableView.indexPathForRow(at: CGPoint(x: 0, y: currentOffsetY))
+            presenter.currentCategoryByOffsetY(indexPath)
+            counterOffsetY -= 0.35
+        }
+        
         if let startOffset = previousOffset {
             let delta = abs((startOffset.y - currentOffset.y))
-          
+            
             if currentOffset.y > startOffset.y, currentOffset.y > .zero {
                 var newHeight = topViewHeightConstraint.constant - delta
                 
@@ -218,7 +233,6 @@ extension MenuViewController: UITableViewDelegate, UIScrollViewDelegate {
                 topViewHeightConstraint.constant = newHeight
             }
             previousOffset = scrollView.contentOffset
-            self.view.layoutIfNeeded()
         }
     }
 }

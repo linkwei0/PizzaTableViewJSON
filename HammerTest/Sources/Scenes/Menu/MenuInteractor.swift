@@ -26,7 +26,7 @@ class MenuInteractor {
     // MARK: - Private methods
     
     private func handle(_ response: [Food]) {
-        presenter?.didLoad(arrayOfFood: response)
+        presenter?.dataDidLoad(arrayOfFood: response)
     }
 }
 
@@ -35,9 +35,11 @@ class MenuInteractor {
 extension MenuInteractor: MenuInteractorProtocol {
     func loadData() {
         dependencies.menuService.getMenu().done { response in
-            self.handle(response)
+//            self.handle(response)
         }.catch { error in
             print("Failed load data")
         }
+        // TODO: This's mock
+        handle(Food.mockFood)
     }
 }
